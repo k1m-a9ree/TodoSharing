@@ -23,7 +23,13 @@ public class UserGUI {
         SwingUtilities.invokeLater(() -> new IntroFrame().setVisible(true));
     }
 
-
+    // 질문: 버튼을 누르면 다음 창으로 넘어가게 만들어야해 로그인 버튼을 누르면 다이얼로그 뜨고 인증이 되면 다음창으로 넘어가는것처럼
+    //      이때 자바에서는 클래스별로 프레임을 두개 만들어서 연결하는게 좋을까 아니면 하나의 프레임에 패널들을 카드레이아웃으로 넘기는게 좋을까?
+    // 답변: 일반적인 권장 사항은 2번, 즉 하나의JFrame에 CardLayout을 사용하는 방식.로그인 후 다음 창으로 넘어가는 것은
+    //     사실상 **"애플리케이션의 다음 상태/화면으로 전환"**하는 것이며, 별개의 새로운 애플리케이션을 여는 것이 아니기 때문.
+    // 평가: 다음창으로 넘어가는 것 일뿐 별개의 새로운 애플리케이션을 여는 것이 아니기 때문이라는 문구에서 동의를 함.
+    //      CardLayout를 사용하여 구현하던 중 가시성이 떨어지고 더 복잡해 보여 하나의 클래스에 두개의 프레임을 만들어 연결함.
+    //      CardLayout를 사용한 부분이 남아있지만 프로그램 작동에는 이상이 없어 남겨둠.
     // ==========================================
     // 1. 초기 화면 (IntroFrame)
     // ==========================================
@@ -81,12 +87,15 @@ public class UserGUI {
                 new LoginDialog(this).setVisible(true);
             });
 
-            // 회원가입 버튼 클릭 시 리스너 (기능은 미구현)
+            // 회원가입 버튼 클릭 시 리스너
             btnRegister.addActionListener(e -> {
                 new JoinDialog(this).setVisible(true);
             });
         }
 
+        // 질문: 로그인 버튼 눌렀을때 로그인창을 만들어야하는데 패널을 추가해서 카드레이아웃으로 넘기는 거 말고 다른 방법 없을까?
+        // 답변: 다이얼로그를 사용하여 로그인창 구성하면 됨
+        // 평가: 코드가 분리돼서 편하다. 카드레이아웃이 아니라서 조금더 로그인 창 처럼 보인다.
         // ==========================================
         // 2. 로그인 다이얼로그 (LoginDialog)
         // ==========================================
@@ -179,11 +188,6 @@ public class UserGUI {
                 add(cancelBtn);
 
                 submitBtn.addActionListener(e -> {
-                    // -------------------------------------------------------
-                    // [TODO 2] 회원가입 요청 (쓰기)
-                    // -------------------------------------------------------
-                    // 1. 입력받은 id, pw, name을 JSON 또는 문자열로 포장
-                    // 2. 서버로 전송하여 DB 또는 파일에 저장 요청
 
                     String id = idField.getText();
                     String pw = new String(pwField.getPassword());
@@ -192,8 +196,8 @@ public class UserGUI {
                         return;
                     }
                     try (Socket socket = new Socket("127.0.0.1", 3000);
-                        ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-                        ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
+                         ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+                         ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
 
                         out.writeObject("REGISTER");
                         out.writeObject(id);
@@ -231,6 +235,10 @@ public class UserGUI {
         private String currentViewOwnerId; // 현재 화면의 주인 (나 or 친구)
         private JLabel timeLabel;
         private JButton saveButton;
+        // 수업 시간에 쓴 Date클래스를 사용하여 구성할려 하였으나 잘 되지 않아 질문함
+        // 질문: 시간을 나타내는 것을 추가 하고 싶은데 어떻게 하면 돼? 1초마다 레이블의 텍스트를 업데이트하면 되는거 아니야?
+        // 답변: 포맷터(Formatter)가 필요하다.Date 객체는 시간을 특정한 시점으로 나타내는 데이터 구조일 뿐, 화면에 표시될 문자열 형식을 가지고 있지 않음.
+        //      즉 시분초로 형턔로 바꾸기 위해 필요함.
         private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
         private JMenu friendMenu;
 

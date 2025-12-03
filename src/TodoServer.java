@@ -4,10 +4,10 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class TodoServer {
-    private static final int PORT = 3000;
-    private static final String DB_FILE = "users_db.dat";
+    private static final int PORT = 3000; // 포트 변수
+    private static final String DB_FILE = "users_db.dat"; // 데이터 베이스 파일
 
-    private static Map<String, User> allUsers = new ConcurrentHashMap<>();
+    private static Map<String, User> allUsers = new ConcurrentHashMap<>(); // 유저 불러와서 여기다가 저장함
 
     public static void main(String[] args) {
         loadUsers();
@@ -17,12 +17,12 @@ public class TodoServer {
 
             while (true) {
                 Socket socket = serverSocket.accept();
-                new Thread(new ClientHandler(socket)).start(); // 스레드 생성
+                new Thread(new ClientHandler(socket)).start(); // 스레드 생성 (Runnable 만들었음)
             }
         } catch (IOException e) { e.printStackTrace(); }
     }
 
-    private static synchronized void loadUsers() {
+    private static synchronized void loadUsers() { // 데베에서 유저 불러와서 Map에 넣기
         File file = new File(DB_FILE);
         if (!file.exists()) return;
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
@@ -31,14 +31,13 @@ public class TodoServer {
         } catch (Exception e) { allUsers = new ConcurrentHashMap<>(); }
     }
 
-    private static synchronized void saveUsers() {
+    private static synchronized void saveUsers() { // 데베에 다시 저장
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(DB_FILE))) {
             oos.writeObject(allUsers); // 맵 전체 저장
         } catch (IOException e) { e.printStackTrace(); }
     }
 
-    // 클라 핸들러
-    static class ClientHandler implements Runnable {
+    static class ClientHandler implements Runnable { // 클라 핸들러
         private Socket socket;
         private User currentUser; // 현재 접속한 유저
 
@@ -51,11 +50,16 @@ public class TodoServer {
 
                 // 인증 루프
                 while (currentUser == null) {
-                    String type = (String) in.readObject(); // "LOGIN" or "REGISTER"
+                    String type = (String) in.readObject(); // 가입 또는 로그인
                     String id = (String) in.readObject();
                     String pw = (String) in.readObject();
 
-                    if (type.equals("REGISTER")) {
+                    /*
+                    대충 id랑 pw 입력받아서 가입이나 로그인 함
+                    출력할때 FAIL이나 SUCCESS가 앞에 있는 이유는, 클라이언트에서 이걸로 성공 실패 여부 확인함
+                    (startsWith는 첨봐서 당황했슨;;)
+                     */
+                    if (type.equals("REGISTER")) { // 가입
                         if (allUsers.containsKey(id)) {
                             out.writeObject("FAIL:이미 존재하는 아이디입니다.");
                         } else {
@@ -63,7 +67,7 @@ public class TodoServer {
                             saveUsers();
                             out.writeObject("SUCCESS:회원가입 완료. 로그인해주세요.");
                         }
-                    } else if (type.equals("LOGIN")) {
+                    } else if (type.equals("LOGIN")) { // 로그인
                         User user = allUsers.get(id);
                         if (user != null && user.getPassword().equals(pw)) {
                             currentUser = user; // 로그인 성공!
@@ -81,28 +85,28 @@ public class TodoServer {
                 while (true) {
                     String cmd = (String) in.readObject();
 
-                    if (cmd.equals("GET")) {
+                    if (cmd.equals("GET")) { // 투두리스트 보내기
                         out.reset();
                         out.writeObject(new ArrayList<>(currentUser.getTodoList()));
                         out.flush();
 
-                    } else if (cmd.equals("ADD")) {
+                    } else if (cmd.equals("ADD")) { // 투두 추가
                         String title = (String) in.readObject();
                         currentUser.getTodoList().add(new TodoItem(title));
                         saveUsers();
 
-                    } else if (cmd.equals("DELETE_ITEMS")) { // 저장 버튼(완료 처리) 로직
+                    } else if (cmd.equals("DELETE_ITEMS")) { // 저장 버튼 (체크된 리스트 삭제)
                         List<String> titlesToDelete = (List<String>) in.readObject();
                         // 제목이 일치하면 삭제 (완료 처리)
                         currentUser.getTodoList().removeIf(item -> titlesToDelete.contains(item.getTitle()));
                         saveUsers();
 
-                    } else if (cmd.equals("GET_FRIENDS")) {
+                    } else if (cmd.equals("GET_FRIENDS")) { // 친구 목록 보내기
                         out.reset();
                         out.writeObject(currentUser.listFriends());
                         out.flush();
 
-                    } else if (cmd.equals("ADD_FRIEND")) {
+                    } else if (cmd.equals("ADD_FRIEND")) { // 친구 추가
                         String friendId = (String) in.readObject();
                         if (allUsers.containsKey(friendId) && !friendId.equals(currentUser.getUsername())) {
                             currentUser.addFriend(friendId);
@@ -113,7 +117,7 @@ public class TodoServer {
                         }
                         out.flush();
 
-                    } else if (cmd.equals("GET_FRIEND_TODOS")) {
+                    } else if (cmd.equals("GET_FRIEND_TODOS")) { // 친구 투두 엿보기
                         String friendId = (String) in.readObject();
                         User friend = allUsers.get(friendId);
                         out.reset();
@@ -124,7 +128,7 @@ public class TodoServer {
                         }
                         out.flush();
 
-                    } else if (cmd.equals("EXIT")) {
+                    } else if (cmd.equals("EXIT")) { // 나가기
                         break;
                     }
                     out.flush();
