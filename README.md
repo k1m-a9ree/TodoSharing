@@ -174,10 +174,16 @@ private static synchronized void loadUsers() { // 데베에서 유저 불러와�
     }
 ```
 
+User.java User객체를 파일에 저장하기 위해 Serializable 인터페이스 구현
+```java
+public class User implements Serializable
+```
+
 ### 컬렉션
-User.java 친구를 조회하고 추가하기 위해 Set 사용
+User.java 친구를 조회하고 추가하기 위해 Set 사용, TodoItem을 넣기 위한 List 사용
 ```java
 private Set<String> friends = new HashSet<>();
+List<TodoItem> todoList = new ArrayList<>();
 ```
 
 TodoServer.java 유저 아이디로 유저 객체를 찾기 위해 Map 사용
