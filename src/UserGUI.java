@@ -208,6 +208,9 @@ public class UserGUI {
                         if (response.startsWith("SUCCESS")) {
                             JOptionPane.showMessageDialog(this, "회원가입 성공적");
                             dispose();
+                        }else {
+                            JOptionPane.showMessageDialog(this, "이미 있는 아이디거나 이름입니다.");
+                            dispose();
                         }
                     } catch (Exception exception) {
                         JOptionPane.showMessageDialog(this, "서버 연결 오류: " + exception.getMessage());
